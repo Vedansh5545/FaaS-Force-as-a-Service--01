@@ -1,10 +1,10 @@
 """
-Generates labelled synthetic test cases into tests/cases/synthetic/.
+Generates labelled synthetic test cases into src/tests/cases/synthetic/.
 
 Each case is a folder of 2 frames: 000.jpg = frame1, 001.jpg = frame2. Folder name starts with
 "same_" or "diff_" = the expected answer.
 
-Real footage goes in tests/cases/<anything>/ using the same layout; the benchmark picks it up.
+Real footage goes in src/tests/cases/<anything>/ using the same layout; the benchmark picks it up.
 """
 import shutil
 from pathlib import Path

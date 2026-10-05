@@ -1,2 +1,4 @@
 .vscode
-tests/cases
+.claude
+src/tests/cases
+__pycache__/

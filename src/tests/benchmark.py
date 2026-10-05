@@ -1,10 +1,10 @@
 """
-Feeds every case in tests/cases/ to each technique and reports accuracy + speed.
+Feeds every case in src/tests/cases/ to each technique and reports accuracy + speed.
 
 Each case is 2 frames. Score >= Similarity_Threshold = accept (similar, reuse the answer); below = reject.
 False-same is the dangerous error (we'd reuse a stale answer), so it's reported separately.
 
-Usage: python tests/makeCases.py && python tests/benchmark.py
+Usage: python src/tests/makeCases.py && python src/tests/benchmark.py
 """
 import sys
 import time
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import cv2 as cv
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "Tier1Caches"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Tier1Caches"))
 from ChangeBucket import ChangeBucket  # noqa: E402
 from ColorFingerprint import ColorFingerprint  # noqa: E402
 from OutlineComparison import OutlineComparison  # noqa: E402
@@ -40,7 +40,7 @@ def loadCases():
 def main():
     cases = list(loadCases())
     if not cases:
-        sys.exit(f"no cases in {Cases_Folder} - run tests/makeCases.py first")
+        sys.exit(f"no cases in {Cases_Folder} - run src/tests/makeCases.py first")
 
     stats = {m: {"right": 0, "falseSame": 0, "falseDiff": 0, "secs": 0.0} for m in Techniques_To_Test}
     print(f"{'case':38} {'expect':6} " + " ".join(f"{m:>20}" for m in Techniques_To_Test))

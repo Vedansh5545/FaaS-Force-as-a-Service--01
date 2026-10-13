@@ -7,7 +7,7 @@ last one and count how many lines don't match. Outlines ignore lighting, so a cl
 over doesn't look like a new scene.
 """
 
-# how far the edge thresholds sit below/above the frame's median brightness (0.33 = -33% / +33%)
+# how far the edge thresholds sit below/above the frame's median brightness
 Edge_Threshold_Spread = 0.33
 # how many pixels an edge can shift and still count as "didn't move"
 Edge_Shift_Tolerance_Px = 1
@@ -57,7 +57,9 @@ if __name__ == "__main__":
     moved[30:60, 70:110] = 200
 
     assert OutlineComparison(frame, frame) == (1.0, True)
-    assert OutlineComparison(frame, (frame * 0.6).astype(np.uint8))[1]  # darker, same shape
+    assert OutlineComparison(frame, (frame * 0.6).astype(np.uint8))[
+        1
+    ]  # darker, same shape
     assert OutlineComparison(frame, moved)[0] < 0.5
     assert OutlineComparison(np.zeros_like(frame), np.zeros_like(frame)) == (1.0, True)
     print("OutlineComparison ok")

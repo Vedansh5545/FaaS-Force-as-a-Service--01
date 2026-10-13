@@ -23,9 +23,9 @@ Image_Types = {".jpg", ".jpeg", ".png"}
 
 # each takes (frame1, frame2) and returns (score, accept?)
 Techniques_To_Test = {
-    "ColorFingerprint": ColorFingerprint.similar,
-    "OutlineComparison": OutlineComparison.similar,
-    "ChangeBucket": ChangeBucket.similar,
+    "ColorFingerprint": ColorFingerprint,
+    "OutlineComparison": OutlineComparison,
+    "ChangeBucket": ChangeBucket,
 }
 
 

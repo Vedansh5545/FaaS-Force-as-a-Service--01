@@ -15,64 +15,49 @@ Edge_Shift_Tolerance_Px = 1
 Edge_Thicken_Kernel = np.ones((2 * Edge_Shift_Tolerance_Px + 1,) * 2, np.uint8)
 
 
-class OutlineComparison:
-    def __init__(self):
-        self.last = None
+def OutlineComparison(frame1, frame2, threshold=0.9):
+    """Two raw BGR frames in -> (score, is the scene similar enough to reuse the cached answer?)."""
 
-    @staticmethod
-    def edges(grey):
+    def outline(frame):
+        # shrink: INTER_AREA averages the pixels it throws away, the right choice for shrinking
+        small = cv.resize(frame, (160, 90), interpolation=cv.INTER_AREA)
+        grey = cv.cvtColor(small, cv.COLOR_BGR2GRAY)
+
+        # Canny needs two brightness thresholds; hanging them off this frame's median keeps a
+        # dim room and a bright one from tracing wildly different amounts of edge
         medianBrightness = np.median(grey)
         lowThreshold = int((1 - Edge_Threshold_Spread) * medianBrightness)
         highThreshold = int(min(255, (1 + Edge_Threshold_Spread) * medianBrightness))
         return cv.Canny(grey, lowThreshold, highThreshold) > 0
 
-    @staticmethod
-    def diff(edges1, edges2):
-        # fraction of the outline that moved: edge pixels with no edge nearby in the other frame / all edge pixels
-        total = np.count_nonzero(edges1) + np.count_nonzero(edges2)
-        if not total:
-            return 0.0
-        near1 = cv.dilate(edges1.view(np.uint8), Edge_Thicken_Kernel) > 0
-        near2 = cv.dilate(edges2.view(np.uint8), Edge_Thicken_Kernel) > 0
-        return (
-            np.count_nonzero(edges1 & ~near2) + np.count_nonzero(edges2 & ~near1)
-        ) / total
+    edges1 = outline(frame1)
+    edges2 = outline(frame2)
 
-    @staticmethod
-    def shrinkGrey(frame):
-        # same 160x90 shrink as ColorFingerprint.resize; in the camera thread reuse that one instead
-        return cv.cvtColor(
-            cv.resize(frame, (160, 90), interpolation=cv.INTER_AREA), cv.COLOR_BGR2GRAY
-        )
+    # an edgeless pair (blank wall, pitch dark) has nothing to disagree about, so call it identical
+    totalEdgePixels = np.count_nonzero(edges1) + np.count_nonzero(edges2)
+    if not totalEdgePixels:
+        return 1.0, True
 
-    @staticmethod
-    def similar(frame1, frame2, threshold=0.9):
-        # two raw BGR frames in -> (score, similar enough?); score = fraction of outline that stayed put
-        e1, e2 = (
-            OutlineComparison.edges(OutlineComparison.shrinkGrey(f))
-            for f in (frame1, frame2)
-        )
-        score = 1 - OutlineComparison.diff(e1, e2)
-        return score, score >= threshold
+    # thicken each outline by the shift tolerance, so an edge that moved a pixel still counts as put
+    near1 = cv.dilate(edges1.view(np.uint8), Edge_Thicken_Kernel) > 0
+    near2 = cv.dilate(edges2.view(np.uint8), Edge_Thicken_Kernel) > 0
 
-    def update(self, grey):
-        # grey = the already-shrunk 160x90 frame from ColorFingerprint.resize, don't shrink twice
-        edges = self.edges(grey)
-        d = 1.0 if self.last is None else self.diff(edges, self.last)
-        self.last = edges
-        return d
+    # an edge "moved" if the other frame has no edge anywhere near it
+    moved = np.count_nonzero(edges1 & ~near2) + np.count_nonzero(edges2 & ~near1)
+
+    # score = the fraction of the outline that stayed put
+    score = 1 - moved / totalEdgePixels
+    return score, score >= threshold
 
 
 if __name__ == "__main__":
-    frame = np.full((90, 160), 20, np.uint8)
+    frame = np.full((90, 160, 3), 20, np.uint8)
     frame[30:60, 40:80] = 200
-    moved = np.full((90, 160), 20, np.uint8)
+    moved = np.full((90, 160, 3), 20, np.uint8)
     moved[30:60, 70:110] = 200
 
-    oc = OutlineComparison()
-    assert oc.update(frame) == 1.0  # nothing to compare yet
-    assert oc.update(frame) == 0.0
-    assert oc.update((frame * 0.6).astype(np.uint8)) < 0.05  # darker, same shape
-    assert oc.update(moved) > 0.5
-    assert OutlineComparison.diff(np.zeros((2, 2), bool), np.zeros((2, 2), bool)) == 0.0
+    assert OutlineComparison(frame, frame) == (1.0, True)
+    assert OutlineComparison(frame, (frame * 0.6).astype(np.uint8))[1]  # darker, same shape
+    assert OutlineComparison(frame, moved)[0] < 0.5
+    assert OutlineComparison(np.zeros_like(frame), np.zeros_like(frame)) == (1.0, True)
     print("OutlineComparison ok")

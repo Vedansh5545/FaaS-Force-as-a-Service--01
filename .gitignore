@@ -1,0 +1,64 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ML artifacts downloaded at runtime
+*.pt
+*.onnx
+runs/
+wandb/
+
+# Indra / Hugging Face caches (local copies)
+.cache/
+models/ocr/
+
+# Office lock files
+.~lock.*
+
+Reference/
+training/facial_recognition/haarcascade_frontalface_default.xml
+training/facial_recognition/results/
+training/facial_recognition/dataset/
+training/facial_recognition/Rowan/
+training/facial_recognition/testImages/
+training/facial_recognition/referenceCode/
+training/facial_recognition/encodings/
+
+testing/
+# Models & artifacts
+*.pkl
+*.pickle
+*.joblib
+models/
+artifacts/
+checkpoints/
+*.pt
+*.pth

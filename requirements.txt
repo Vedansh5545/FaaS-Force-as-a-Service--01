@@ -1,0 +1,15 @@
+# Python 3.10+ is required (indra-ocr).
+# dlib-bin provides prebuilt dlib wheels so face_recognition does not
+# need to compile dlib (which requires python3.12-dev on Debian/Ubuntu).
+# Install face_recognition with --no-deps after dlib-bin, or pip will try
+# to build the official dlib source package.
+# setuptools<82 still ships pkg_resources, which face_recognition_models needs.
+setuptools>=70,<81
+PyYAML>=6.0
+numpy>=1.24
+opencv-python>=4.8,<5
+opencv-python-headless>=4.8,<5
+dlib-bin>=20.0.1
+face_recognition>=1.3.0
+ultralytics>=8.0
+indra-ocr>=1.1.0

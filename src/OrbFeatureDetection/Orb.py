@@ -1,8 +1,7 @@
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 from typing import Any
-
 
 def OrbDetection(img: str) -> tuple[list, list]:
     # 1. Initialize outputs as native empty lists
@@ -11,9 +10,12 @@ def OrbDetection(img: str) -> tuple[list, list]:
 
     orb = cv2.ORB_create(nfeatures=500)
     # process both images
-    img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+    image_path = Path(img)
+    image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        raise FileNotFoundError(f"Unable to read image: {image_path.resolve()}")
 
-    keypoints, descriptors = orb.detectAndCompute(img, None)
+    keypoints, descriptors = orb.detectAndCompute(image, None)
 
     if descriptors is not None:
         for kp in keypoints:
@@ -51,3 +53,29 @@ def comparison(img1: str, img2: str, ratio: float = 0.75) -> float:
         p[0] for p in pairs if len(p) == 2 and p[0].distance < ratio * p[1].distance
     ]
     return len(good) / min(len(d1), len(d2))
+
+
+def main():
+    folder = Path(__file__).resolve().parents[2] / "testing" / "dataset" / "images"
+    image_extensions = {".jpg", ".jpeg", ".png", ".webp"}
+    images = sorted(
+        image for image in folder.iterdir()
+        if image.is_file() and image.suffix.lower() in image_extensions
+    )
+
+    if len(images) < 2:
+        raise RuntimeError(f"At least two images are required in {folder}")
+
+    scores = []
+    for image1, image2 in zip(images, images[1:]):
+        score = comparison(str(image1), str(image2))
+        scores.append(score)
+        print(
+            f"image1: {image1.name} | image2: {image2.name} | score: {score:.3f}"
+        )
+
+    print(f"\nCompared {len(images)} images ({len(scores)} pairs)")
+
+
+if __name__ == "__main__":
+    main()

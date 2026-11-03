@@ -1,3 +1,7 @@
+.vscode
+.claude
+src/tests/cases
+__pycache__/
 # Virtual environments
 .venv/
 venv/

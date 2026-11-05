@@ -1,11 +1,11 @@
 """
-Finds the ORB similarity threshold on dataset/ and reports it once on a held-out test split.
+Finds the ORB similarity threshold on testing/dataset/ and reports it once on a held-out test split.
 
 Positive class = match = CACHE HIT. labels.csv uses the opposite: label_id 0 = NOT CHANGED = CACHE HIT.
 A false hit (FP) is the dangerous error, since we'd reuse a stale answer.
 
 Usage: python src/tests/tuneOrbThreshold.py [--recompute]
-Scores are saved outside dataset/ because verify_dataset.py rejects unexpected files there.
+Scores are saved outside testing/dataset/ because verify_dataset.py rejects unexpected files there.
 Rerun with --recompute after changing Orb.py.
 """
 import argparse
@@ -20,10 +20,10 @@ Repo_Root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Repo_Root / "src" / "OrbFeatureDetection"))
 from Orb import comparison  # noqa: E402
 
-Dataset_Folder = Repo_Root / "dataset"
+Dataset_Folder = Repo_Root / "testing" / "dataset"
 Scores_File = Repo_Root / "artifacts" / "orbScores.csv"
 Thresholds = np.linspace(0, 1, 101)
-# dataset/README.md: keep scenes and source families together. These two share a family with no
+# testing/dataset/README.md: keep scenes and source families together. These two share a family with no
 # tuning scene, make exactly 20% of the pairs, and include hard misses and a vehicle viewpoint.
 Test_Scenes = {"MOT17-11", "MOT17-13"}
 Score_Columns = ["pair_id", "scene_id", "difficulty", "match", "score"]

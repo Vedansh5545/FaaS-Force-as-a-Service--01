@@ -62,7 +62,6 @@ testing/
 *.pickle
 *.joblib
 models/
-artifacts/
 checkpoints/
 *.pt
 *.pth

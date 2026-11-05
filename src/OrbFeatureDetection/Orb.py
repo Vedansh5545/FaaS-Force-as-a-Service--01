@@ -45,9 +45,15 @@ def comparison(img1: str, img2: str, ratio: float = 0.75) -> float:
     d1 = np.frombuffer(b"".join(des1), dtype=np.uint8).reshape(len(des1), -1)
     d2 = np.frombuffer(b"".join(des2), dtype=np.uint8).reshape(len(des2), -1)
 
-    matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
-    pairs = matcher.knnMatch(d1, d2, k=2)
+    # match from the smaller set: score stays in 0-1 and order stops mattering
+    if len(d1) > len(d2):
+        d1, d2 = d2, d1
+
+    matcher = cv2.BFMatcher(
+        cv2.NORM_HAMMING
+    )  # bruteforce matching using Hamming distance
+    pairs = matcher.knnMatch(d1, d2, k=2)  # K-nearest-neighbors search
     good = [
         p[0] for p in pairs if len(p) == 2 and p[0].distance < ratio * p[1].distance
-    ]
+    ] #Lowe's ratio test
     return len(good) / min(len(d1), len(d2))

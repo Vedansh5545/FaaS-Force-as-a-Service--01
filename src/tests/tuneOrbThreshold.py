@@ -17,11 +17,11 @@ import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
 Repo_Root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(Repo_Root / "src" / "OrbFeatureDetection"))
+if str(Repo_Root / "src" / "OrbFeatureDetection") not in sys.path:
+    sys.path.insert(0, str(Repo_Root / "src" / "OrbFeatureDetection"))
 from Orb import comparison  # noqa: E402
 
 Dataset_Folder = Repo_Root / "testing" / "dataset"
-Scores_File = Repo_Root / "artifacts" / "orbScores.csv"
 Thresholds = np.linspace(0, 1, 101)
 # testing/dataset/README.md: keep scenes and source families together. These two share a family with no
 # tuning scene, make exactly 20% of the pairs, and include hard misses and a vehicle viewpoint.
@@ -29,13 +29,16 @@ Test_Scenes = {"MOT17-11", "MOT17-13"}
 Score_Columns = ["pair_id", "scene_id", "difficulty", "match", "score"]
 
 
-def computeScores():
+def computeScores(score_fn=comparison, scores_file=None):
+    if scores_file is None:
+        scores_file = Repo_Root / "artifacts" / "orbScores.csv"
+
     with open(Dataset_Folder / "labels.csv", encoding="utf-8", newline="") as labelsFile:
         pairs = list(csv.DictReader(labelsFile))
 
     rows = []
     for pair in pairs:
-        score = comparison(
+        score = score_fn(
             str(Dataset_Folder / pair["image_a_path"]),
             str(Dataset_Folder / pair["image_b_path"]),
         )
@@ -49,15 +52,15 @@ def computeScores():
             }
         )
 
-    Scores_File.parent.mkdir(exist_ok=True)
-    with open(Scores_File, "w", encoding="utf-8", newline="") as scoresFile:
+    scores_file.parent.mkdir(exist_ok=True, parents=True)
+    with open(scores_file, "w", encoding="utf-8", newline="") as scoresFile:
         writer = csv.DictWriter(scoresFile, Score_Columns)
         writer.writeheader()
         writer.writerows(rows)
 
 
-def loadScores():
-    with open(Scores_File, encoding="utf-8", newline="") as scoresFile:
+def loadScores(scores_file):
+    with open(scores_file, encoding="utf-8", newline="") as scoresFile:
         return [
             {**row, "match": int(row["match"]), "score": float(row["score"])}
             for row in csv.DictReader(scoresFile)
@@ -76,13 +79,23 @@ def errorCounts(matches, predictions):
     return int(falseHits), int(falseMisses)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(score_fn=None, output_name="orbScores.csv", description=None, recompute=None):
+    if score_fn is None:
+        score_fn = comparison
+    description = description or __doc__
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--recompute", action="store_true", help="rerun ORB instead of reusing saved scores")
-    if parser.parse_args().recompute or not Scores_File.exists():
-        computeScores()
+    if recompute is None:
+        args = parser.parse_args()
+        recompute = args.recompute
+    else:
+        args = argparse.Namespace(recompute=recompute)
 
-    rows = loadScores()
+    scores_file = Repo_Root / "artifacts" / output_name
+    if recompute or not scores_file.exists():
+        computeScores(score_fn, scores_file)
+
+    rows = loadScores(scores_file)
     tune = [r for r in rows if r["scene_id"] not in Test_Scenes]
     test = [r for r in rows if r["scene_id"] in Test_Scenes]
 
@@ -117,6 +130,7 @@ def main():
         chosen = np.array([r["difficulty"] == difficulty for r in test])
         hits, misses = errorCounts(testMatches[chosen], predictions[chosen])
         print(f"  {difficulty:8} pairs {int(chosen.sum()):2}, false hits {hits}, false misses {misses}")
+    return threshold, falseHits, falseMisses
 
 
 if __name__ == "__main__":
